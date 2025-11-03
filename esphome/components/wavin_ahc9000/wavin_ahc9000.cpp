@@ -1209,7 +1209,8 @@ climate::ClimateTraits WavinZoneClimate::traits() {
   }
   t.set_visual_min_temperature(vmin);
   t.set_visual_max_temperature(vmax);
-  t.set_visual_temperature_step(0.5f);
+  t.set_visual_current_temperature_step(0.1);
+  t.set_visual_target_temperature_step(0.5);
   return t;
 }
 void WavinZoneClimate::control(const climate::ClimateCall &call) {
