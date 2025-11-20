@@ -1195,8 +1195,7 @@ climate::ClimateTraits WavinZoneClimate::traits() {
   climate::ClimateTraits t;
   t.set_supported_modes({climate::CLIMATE_MODE_HEAT, climate::CLIMATE_MODE_OFF});
   t.set_supports_current_temperature(true);
-  t.set_supports_action(true);
-  // Default visual bounds
+  t.add_feature_flags(climate::CLIMATE_FEATURE_ACTION);  
   float vmin = 5.0f;
   float vmax = 35.0f;
   // For comfort climates (using floor temperature), adopt current floor min/max when available
