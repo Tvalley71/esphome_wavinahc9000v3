@@ -42,7 +42,6 @@ class WavinAHC9000 : public PollingComponent, public uart::UARTDevice {
   void loop() override;
   void update() override;
   void dump_config() override;
-  void read_hw_version_();
 
   void add_channel_climate(WavinZoneClimate *c);
   void add_group_climate(WavinZoneClimate *c);
@@ -73,7 +72,6 @@ class WavinAHC9000 : public PollingComponent, public uart::UARTDevice {
   void generate_yaml_suggestion();
   void set_yaml_ready_binary_sensor(binary_sensor::BinarySensor *s) { this->yaml_ready_binary_sensor_ = s; }
   void set_yaml_text_sensor(text_sensor::TextSensor *s) { this->yaml_text_sensor_ = s; }
-  void set_hw_version_sensor(text_sensor::TextSensor *s) { this->hw_version_sensor_ = s; }
   // Debug helper to dump registers for a channel (to identify floor min/max addresses)
   void dump_channel_floor_limits(uint8_t channel);
   // Accessor for last generated YAML (for HA notifications via lambda)
@@ -155,7 +153,6 @@ class WavinAHC9000 : public PollingComponent, public uart::UARTDevice {
   std::map<uint8_t, sensor::Sensor *> comfort_setpoint_sensors_;
   std::map<uint8_t, switch_::Switch *> child_lock_switches_;
   binary_sensor::BinarySensor *yaml_ready_binary_sensor_{nullptr};
-  text_sensor::TextSensor *hw_version_sensor_{nullptr};
   text_sensor::TextSensor *yaml_text_sensor_{nullptr};
   std::string yaml_last_suggestion_{};
   std::string yaml_last_climate_{};
@@ -325,6 +322,3 @@ class WavinZoneClimate : public climate::Climate, public Component {
 //   - static constexpr uint16_t PACKED_CONFIGURATION_CHILD_LOCK_MASK = 0x0800;
 // Parsing: when reading PACKED_CONFIGURATION, set child_lock = (raw_cfg & mask) != 0.
 // Writing: read-modify-write preserving mode bits and baseline 0x4000 prefix.
-
-static const uint16_t HWVERS_REGISTER = 2;   // Index 02 per Jablotron docs
-
