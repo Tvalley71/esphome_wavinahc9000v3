@@ -25,32 +25,7 @@ static uint16_t crc16(const uint8_t *frame, size_t len) {
   return temp;
 }
 
-void WavinAHC9000::setup() {
-  ESP_LOGCONFIG(TAG, "Wavin AHC9000 hub setup");
-
-  // --- Read HW version on startup ---
-  if (this->hw_version_sensor_ != nullptr) {
-    std::vector<uint16_t> regs;
-
-    // Try ELEMENTS category first (index 02)
-    if (!this->read_registers(CAT_ELEMENTS, 0x00, HWVERS_REGISTER, 1, regs)) {
-      // Fallback: also try PACKED category
-      this->read_registers(CAT_PACKED, 0x00, HWVERS_REGISTER, 1, regs);
-    }
-
-    if (!regs.empty()) {
-      uint16_t raw = regs[0];
-      char buf[16];
-      snprintf(buf, sizeof(buf), "MC110%u", raw);
-      this->hw_version_sensor_->publish_state(buf);
-
-      ESP_LOGI(TAG, "Detected HW version: %s (raw=%u)", buf, raw);
-    } else {
-      ESP_LOGW(TAG, "Unable to read hardware version register.");
-    }
-  }
-}
-
+void WavinAHC9000::setup() { ESP_LOGCONFIG(TAG, "Wavin AHC9000 hub setup"); }
 void WavinAHC9000::loop() {}
 
 void WavinAHC9000::set_channel_friendly_name(uint8_t channel, const std::string &name) {
@@ -521,12 +496,6 @@ void WavinAHC9000::write_channel_setpoint(uint8_t channel, float celsius) {
 void WavinAHC9000::write_group_setpoint(const std::vector<uint8_t> &members, float celsius) {
   for (auto ch : members) this->write_channel_setpoint(ch, celsius);
 }
-
-// Setter for hardware version text sensor
-void WavinAHC9000::set_hw_version_sensor(text_sensor::TextSensor *s) {
-  this->hw_version_sensor_ = s;
-}
-
 
 void WavinAHC9000::write_channel_mode(uint8_t channel, climate::ClimateMode mode) {
   if (channel < 1 || channel > 16) return;
