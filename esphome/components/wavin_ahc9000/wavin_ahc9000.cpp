@@ -565,6 +565,39 @@ void WavinAHC9000::write_channel_child_lock(uint8_t channel, bool enable) {
   }
 }
 
+void WavinAHC9000::read_hw_version_() {
+  std::vector<uint16_t> regs;
+  const uint8_t page = 0x00;
+  const uint8_t count = 1;
+
+  // Try reading from ELEMENTS category first
+  if (!this->read_registers(CAT_ELEMENTS, page, static_cast<uint8_t>(HWVERS_REGISTER), count, regs)) {
+    // fallback to PACKED category
+    if (!this->read_registers(CAT_PACKED, page, static_cast<uint8_t>(HWVERS_REGISTER), count, regs)) {
+      ESP_LOGW("wavin_ahc9000", "read_hw_version_: failed to read HWVERS register (index %u)", HWVERS_REGISTER);
+      return;
+    }
+  }
+
+  if (regs.size() < 1) {
+    ESP_LOGW("wavin_ahc9000", "read_hw_version_: unexpected response size");
+    return;
+  }
+
+  uint16_t raw = regs[0];
+  int v = static_cast<int>(raw);
+
+  char buf[16];
+  snprintf(buf, sizeof(buf), "MC110%d", v);
+
+  if (this->hw_version_sensor_ != nullptr) {
+    this->hw_version_sensor_->publish_state(std::string(buf));
+  }
+
+  ESP_LOGI("wavin_ahc9000", "HW version read: register=%u raw=%u -> %s", HWVERS_REGISTER, raw, buf);
+}
+
+
 void WavinAHC9000::write_channel_floor_min_temperature(uint8_t channel, float celsius) {
   if (channel < 1 || channel > 16) return;
   // Clamp to a sane range; controller likely enforces further constraints
