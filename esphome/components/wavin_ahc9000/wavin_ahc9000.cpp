@@ -497,6 +497,12 @@ void WavinAHC9000::write_group_setpoint(const std::vector<uint8_t> &members, flo
   for (auto ch : members) this->write_channel_setpoint(ch, celsius);
 }
 
+// Setter for hardware version text sensor
+void WavinAHC9000::set_hw_version_sensor(text_sensor::TextSensor *s) {
+  this->hw_version_sensor_ = s;
+}
+
+
 void WavinAHC9000::write_channel_mode(uint8_t channel, climate::ClimateMode mode) {
   if (channel < 1 || channel > 16) return;
   uint8_t page = (uint8_t) (channel - 1);
