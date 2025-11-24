@@ -25,7 +25,32 @@ static uint16_t crc16(const uint8_t *frame, size_t len) {
   return temp;
 }
 
-void WavinAHC9000::setup() { ESP_LOGCONFIG(TAG, "Wavin AHC9000 hub setup"); }
+void WavinAHC9000::setup() {
+  ESP_LOGCONFIG(TAG, "Wavin AHC9000 hub setup");
+
+  // --- Read HW version on startup ---
+  if (this->hw_version_sensor_ != nullptr) {
+    std::vector<uint16_t> regs;
+
+    // Try ELEMENTS category first (index 02)
+    if (!this->read_registers(CAT_ELEMENTS, 0x00, HWVERS_REGISTER, 1, regs)) {
+      // Fallback: also try PACKED category
+      this->read_registers(CAT_PACKED, 0x00, HWVERS_REGISTER, 1, regs);
+    }
+
+    if (!regs.empty()) {
+      uint16_t raw = regs[0];
+      char buf[16];
+      snprintf(buf, sizeof(buf), "MC110%u", raw);
+      this->hw_version_sensor_->publish_state(buf);
+
+      ESP_LOGI(TAG, "Detected HW version: %s (raw=%u)", buf, raw);
+    } else {
+      ESP_LOGW(TAG, "Unable to read hardware version register.");
+    }
+  }
+}
+
 void WavinAHC9000::loop() {}
 
 void WavinAHC9000::set_channel_friendly_name(uint8_t channel, const std::string &name) {
@@ -564,39 +589,6 @@ void WavinAHC9000::write_channel_child_lock(uint8_t channel, bool enable) {
     ESP_LOGW(TAG, "Child lock: write failed ch=%u", (unsigned) channel);
   }
 }
-
-void WavinAHC9000::read_hw_version_() {
-  std::vector<uint16_t> regs;
-  const uint8_t page = 0x00;
-  const uint8_t count = 1;
-
-  // Try reading from ELEMENTS category first
-  if (!this->read_registers(CAT_ELEMENTS, page, static_cast<uint8_t>(HWVERS_REGISTER), count, regs)) {
-    // fallback to PACKED category
-    if (!this->read_registers(CAT_PACKED, page, static_cast<uint8_t>(HWVERS_REGISTER), count, regs)) {
-      ESP_LOGW("wavin_ahc9000", "read_hw_version_: failed to read HWVERS register (index %u)", HWVERS_REGISTER);
-      return;
-    }
-  }
-
-  if (regs.size() < 1) {
-    ESP_LOGW("wavin_ahc9000", "read_hw_version_: unexpected response size");
-    return;
-  }
-
-  uint16_t raw = regs[0];
-  int v = static_cast<int>(raw);
-
-  char buf[16];
-  snprintf(buf, sizeof(buf), "MC110%d", v);
-
-  if (this->hw_version_sensor_ != nullptr) {
-    this->hw_version_sensor_->publish_state(std::string(buf));
-  }
-
-  ESP_LOGI("wavin_ahc9000", "HW version read: register=%u raw=%u -> %s", HWVERS_REGISTER, raw, buf);
-}
-
 
 void WavinAHC9000::write_channel_floor_min_temperature(uint8_t channel, float celsius) {
   if (channel < 1 || channel > 16) return;
